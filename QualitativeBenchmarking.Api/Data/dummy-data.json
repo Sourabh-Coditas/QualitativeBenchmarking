@@ -1,0 +1,90 @@
+{
+  "users": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "isAdmin": true
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "isAdmin": false
+    }
+  ],
+  "requests": [
+    {
+      "id": "721a33e4-226e-4313-a7a1-1edab79401ec",
+      "searchType": "Standard Search",
+      "benchmarkingName": "IT/ITES Set",
+      "transactionName": "Provision of IT services",
+      "industry": "IT",
+      "companyName": "Acme Corp",
+      "financialYear": "FY 2023-24",
+      "purpose": "TP Benchmarking",
+      "companyBusinessDescription": "IT services company.",
+      "exclusionKeywords": "excluded",
+      "aiPrompt": "Analyze IT comparables.",
+      "currentYearFilePath": null,
+      "previousYearFilePath": null,
+      "columnMappingFilePath": null,
+      "outputFilePath": null,
+      "status": "Generated",
+      "requestorName": "Admin User",
+      "requestorUserId": "11111111-1111-1111-1111-111111111111",
+      "createdAtUtc": "2026-02-15T06:18:33.9584523Z",
+      "updatedAtUtc": "2026-02-15T07:18:33.9584523Z"
+    },
+    {
+      "id": "8ff372f7-815f-47cf-8510-bde9bf6ae3c4",
+      "searchType": "Customized Search",
+      "benchmarkingName": "Pharma Set",
+      "transactionName": "Pharma R\u0026D",
+      "industry": "Pharmaceuticals",
+      "companyName": null,
+      "financialYear": "FY 2022-23",
+      "purpose": null,
+      "companyBusinessDescription": "Pharma company.",
+      "exclusionKeywords": "none",
+      "aiPrompt": "Analyze pharma comparables.",
+      "currentYearFilePath": null,
+      "previousYearFilePath": null,
+      "columnMappingFilePath": null,
+      "outputFilePath": null,
+      "status": "Submitted",
+      "requestorName": "John Doe",
+      "requestorUserId": "22222222-2222-2222-2222-222222222222",
+      "createdAtUtc": "2026-02-16T06:18:33.9584523Z",
+      "updatedAtUtc": null
+    },
+    {
+      "id": "fb2db054-fe49-4fa2-b7a1-89276ff66481",
+      "searchType": "Standard Search",
+      "benchmarkingName": "Manufacturing Set",
+      "transactionName": "Manufacturing services",
+      "industry": "Manufacturing",
+      "companyName": null,
+      "financialYear": "FY 2023-24",
+      "purpose": null,
+      "companyBusinessDescription": "Manufacturing company.",
+      "exclusionKeywords": "exclude",
+      "aiPrompt": "Analyze manufacturing comparables.",
+      "currentYearFilePath": null,
+      "previousYearFilePath": null,
+      "columnMappingFilePath": null,
+      "outputFilePath": null,
+      "status": "InProcess",
+      "requestorName": "Jane Smith",
+      "requestorUserId": "33333333-3333-3333-3333-333333333333",
+      "createdAtUtc": "2026-02-17T06:18:33.9584523Z",
+      "updatedAtUtc": null
+    }
+  ]
+}
