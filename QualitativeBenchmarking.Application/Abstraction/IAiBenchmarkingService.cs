@@ -11,6 +11,10 @@ public interface IAiBenchmarkingService
         AiAnalyzeAllRequestDto request,
         CancellationToken cancellationToken = default);
 
+    Task<AiGeneratePromptResponseDto> GeneratePromptAsync(
+        AiGeneratePromptRequestDto request,
+        CancellationToken cancellationToken = default);
+
     Task<(Stream Content, string FileName)> DownloadAsync(
         AiDownloadRequestDto request,
         CancellationToken cancellationToken = default);

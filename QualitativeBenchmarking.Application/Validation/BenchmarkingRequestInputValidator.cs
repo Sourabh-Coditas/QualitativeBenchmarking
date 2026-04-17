@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using KPMG.QualitativeBenchmarking.Application.Dtos.Benchmarking;
-using KPMG.QualitativeBenchmarking.Application.Utils;
 
 namespace KPMG.QualitativeBenchmarking.Application.Validation;
 
@@ -29,16 +28,9 @@ public sealed class BenchmarkingRequestInputValidator
         ValidateRequiredMaxLen(errors, "exclusionKeywords", dto.ExclusionKeywords, 1000);
 
         var aiPrompt = (dto.AiPrompt ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(aiPrompt))
-        {
-            var bd = (dto.CompanyBusinessDescription ?? "").Trim();
-            var ex = (dto.ExclusionKeywords ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(bd) && !string.IsNullOrWhiteSpace(ex))
-                aiPrompt = AiPromptComposer.Compose(bd, ex);
-        }
 
         if (string.IsNullOrWhiteSpace(aiPrompt))
-            errors["aiPrompt"] = "AI Prompt is required (it is auto-generated when Business Description and Exclusion Keywords are provided).";
+            errors["aiPrompt"] = "AI Prompt is required.";
         if (!string.IsNullOrWhiteSpace(aiPrompt) && aiPrompt.Length > 5000)
             errors["aiPrompt"] = "AI Prompt must be 5000 characters or fewer.";
 

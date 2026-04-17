@@ -9,5 +9,7 @@ public class DummyDataFileModel
 {
     public List<User> Users { get; set; } = new();
     public List<BenchmarkingRequest> Requests { get; set; } = new();
+    public List<SavedSearch> Searches { get; set; } = new();
+    public List<PromptRecord> Prompts { get; set; } = new();
     public List<Feedback> Feedbacks { get; set; } = new();
 }

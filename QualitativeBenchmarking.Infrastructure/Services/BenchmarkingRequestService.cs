@@ -123,25 +123,27 @@ public class BenchmarkingRequestService : IBenchmarkingRequestService
     {
         try
         {
-            await using var inputExcel = File.OpenRead(currentYearFilePath);
-            await using var mappingExcel = File.OpenRead(columnMappingFilePath);
+            await using var inputExcel = await OpenStoredFileAsync(currentYearFilePath, cancellationToken)
+                ?? throw new InvalidOperationException("Current year file could not be read.");
+            await using var mappingExcel = await OpenStoredFileAsync(columnMappingFilePath, cancellationToken)
+                ?? throw new InvalidOperationException("Column mapping file could not be read.");
 
             Stream? prevYearExcel = null;
             try
             {
                 if (!string.IsNullOrWhiteSpace(previousYearFilePath))
-                    prevYearExcel = File.OpenRead(previousYearFilePath);
+                    prevYearExcel = await OpenStoredFileAsync(previousYearFilePath, cancellationToken);
 
                 var aiRequest = new AiAnalyzeAllRequestDto
                 {
                     InputExcel = inputExcel,
-                    InputExcelFileName = Path.GetFileName(currentYearFilePath),
+                    InputExcelFileName = DisplayFileName(currentYearFilePath),
                     MappingExcel = mappingExcel,
-                    MappingExcelFileName = Path.GetFileName(columnMappingFilePath),
+                    MappingExcelFileName = DisplayFileName(columnMappingFilePath),
                     PrevYearExcel = prevYearExcel,
                     PrevYearExcelFileName = string.IsNullOrWhiteSpace(previousYearFilePath)
                         ? null
-                        : Path.GetFileName(previousYearFilePath),
+                        : DisplayFileName(previousYearFilePath),
                     TestedParty = entity.CompanyBusinessDescription,
                     ExcludedWords = string.IsNullOrWhiteSpace(entity.ExclusionKeywords) ? null : entity.ExclusionKeywords
                 };
@@ -155,6 +157,7 @@ public class BenchmarkingRequestService : IBenchmarkingRequestService
                 entity.AiDownloadRecon = aiResponse.DownloadRecon;
                 entity.UpdatedAtUtc = DateTime.UtcNow;
                 _store.UpdateRequest(entity);
+                SaveCustomizedSearchPreset(entity);
 
                 return MapToDetail(entity);
             }
@@ -181,6 +184,55 @@ public class BenchmarkingRequestService : IBenchmarkingRequestService
     {
         if (string.IsNullOrWhiteSpace(path)) return;
         await _fileStorage.DeleteAsync(path, cancellationToken);
+    }
+
+    private void SaveCustomizedSearchPreset(BenchmarkingRequest entity)
+    {
+        if (!string.Equals(entity.SearchType, "Customized Search", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(entity.SearchType, "Customised Search", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var search = new SavedSearch
+        {
+            Id = Guid.NewGuid(),
+            Name = entity.BenchmarkingName,
+            SearchType = "Customized Search",
+            FinancialYear = entity.FinancialYear,
+            RequestorUserId = entity.RequestorUserId,
+            RequestorName = entity.RequestorName,
+            IsAdminManaged = false,
+            TransactionName = entity.TransactionName,
+            Industry = entity.Industry,
+            CompanyName = entity.CompanyName,
+            Purpose = entity.Purpose,
+            CompanyBusinessDescription = entity.CompanyBusinessDescription,
+            ExclusionKeywords = entity.ExclusionKeywords,
+            AiPrompt = entity.AiPrompt,
+            BenchmarkingRequestId = entity.Id,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+        _store.AddSearch(search);
+    }
+
+    private Task<Stream?> OpenStoredFileAsync(string storageReference, CancellationToken cancellationToken)
+        => _fileStorage.GetAsync(storageReference, cancellationToken);
+
+    private static string DisplayFileName(string storageReference)
+    {
+        if (storageReference.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || storageReference.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                return Path.GetFileName(new Uri(storageReference).AbsolutePath);
+            }
+            catch
+            {
+                return "file";
+            }
+        }
+
+        return Path.GetFileName(storageReference);
     }
 
     private static string BuildRequestFolderName(string requestorName)
@@ -395,9 +447,9 @@ public class BenchmarkingRequestService : IBenchmarkingRequestService
             CompanyBusinessDescription = r.CompanyBusinessDescription,
             ExclusionKeywords = r.ExclusionKeywords,
             AiPrompt = r.AiPrompt,
-            CurrentYearFileName = r.CurrentYearFilePath != null ? Path.GetFileName(r.CurrentYearFilePath) : null,
-            PreviousYearFileName = r.PreviousYearFilePath != null ? Path.GetFileName(r.PreviousYearFilePath) : null,
-            ColumnMappingFileName = r.ColumnMappingFilePath != null ? Path.GetFileName(r.ColumnMappingFilePath) : null,
+            CurrentYearFileName = r.CurrentYearFilePath != null ? DisplayFileName(r.CurrentYearFilePath) : null,
+            PreviousYearFileName = r.PreviousYearFilePath != null ? DisplayFileName(r.PreviousYearFilePath) : null,
+            ColumnMappingFileName = r.ColumnMappingFilePath != null ? DisplayFileName(r.ColumnMappingFilePath) : null,
             Status = r.Status,
             DownloadMain = canDownloadMain ? $"/api/benchmarking-requests/{r.Id}/download?type=main" : null,
             DownloadRecon = canDownloadRecon ? $"/api/benchmarking-requests/{r.Id}/download?type=recon" : null,

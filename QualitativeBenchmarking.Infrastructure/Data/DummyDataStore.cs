@@ -15,6 +15,8 @@ public class DummyDataStore
     private readonly object _lock = new();
     private List<User> _users = new();
     private List<BenchmarkingRequest> _requests = new();
+    private List<SavedSearch> _searches = new();
+    private List<PromptRecord> _prompts = new();
     private List<Feedback> _feedbacks = new();
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -32,7 +34,7 @@ public class DummyDataStore
     {
         lock (_lock)
         {
-            if (_users.Count > 0 || _requests.Count > 0 || _feedbacks.Count > 0) return;
+            if (_users.Count > 0 || _requests.Count > 0 || _searches.Count > 0 || _prompts.Count > 0 || _feedbacks.Count > 0) return;
             if (File.Exists(_filePath))
             {
                 try
@@ -43,7 +45,13 @@ public class DummyDataStore
                     {
                         _users = model.Users ?? new List<User>();
                         _requests = model.Requests ?? new List<BenchmarkingRequest>();
+                        _searches = model.Searches ?? new List<SavedSearch>();
+                        _prompts = model.Prompts ?? new List<PromptRecord>();
                         _feedbacks = model.Feedbacks ?? new List<Feedback>();
+                        if (_searches.Count == 0 && _requests.Count > 0)
+                            _searches = BuildSearchesFromRequests(_requests);
+                        if (_prompts.Count == 0)
+                            _prompts = BuildDefaultPromptTemplates();
                         return;
                     }
                 }
@@ -90,6 +98,59 @@ public class DummyDataStore
         {
             EnsureLoaded();
             return _requests.ToList();
+        }
+    }
+
+    public IReadOnlyList<SavedSearch> GetAllSearches()
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            return _searches.ToList();
+        }
+    }
+
+    public SavedSearch? GetSearchById(Guid id)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            return _searches.FirstOrDefault(s => s.Id == id);
+        }
+    }
+
+    public void AddSearch(SavedSearch search)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            _searches.Add(search);
+            SaveToFile();
+        }
+    }
+
+    public void UpdateSearch(SavedSearch search)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            var idx = _searches.FindIndex(s => s.Id == search.Id);
+            if (idx < 0) return;
+            _searches[idx] = search;
+            SaveToFile();
+        }
+    }
+
+    public bool RemoveSearch(Guid id)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            var idx = _searches.FindIndex(s => s.Id == id);
+            if (idx < 0) return false;
+            _searches.RemoveAt(idx);
+            SaveToFile();
+            return true;
         }
     }
 
@@ -163,6 +224,59 @@ public class DummyDataStore
         }
     }
 
+    public IReadOnlyList<PromptRecord> GetAllPrompts()
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            return _prompts.ToList();
+        }
+    }
+
+    public PromptRecord? GetPromptById(Guid id)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            return _prompts.FirstOrDefault(p => p.Id == id);
+        }
+    }
+
+    public void AddPrompt(PromptRecord prompt)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            _prompts.Add(prompt);
+            SaveToFile();
+        }
+    }
+
+    public void UpdatePrompt(PromptRecord prompt)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            var idx = _prompts.FindIndex(p => p.Id == prompt.Id);
+            if (idx < 0) return;
+            _prompts[idx] = prompt;
+            SaveToFile();
+        }
+    }
+
+    public bool RemovePrompt(Guid id)
+    {
+        lock (_lock)
+        {
+            EnsureLoaded();
+            var idx = _prompts.FindIndex(p => p.Id == id);
+            if (idx < 0) return false;
+            _prompts.RemoveAt(idx);
+            SaveToFile();
+            return true;
+        }
+    }
+
     /// <summary>
     /// Creates the JSON file with sample data when it doesn't exist (first run).
     /// </summary>
@@ -232,15 +346,86 @@ public class DummyDataStore
                 CreatedAtUtc = baseDate.AddDays(2)
             }
         };
+        _searches = BuildSearchesFromRequests(_requests);
+        _prompts = BuildDefaultPromptTemplates();
         _feedbacks = new List<Feedback>();
         SaveToFile();
+    }
+
+    private static List<SavedSearch> BuildSearchesFromRequests(IEnumerable<BenchmarkingRequest> requests)
+    {
+        return requests
+            .Where(r =>
+                string.Equals(r.SearchType, "Standard Search", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.SearchType, "Customized Search", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.SearchType, "Customised Search", StringComparison.OrdinalIgnoreCase))
+            .Select(r => new SavedSearch
+            {
+                Id = Guid.NewGuid(),
+                Name = r.BenchmarkingName,
+                SearchType = string.Equals(r.SearchType, "Standard Search", StringComparison.OrdinalIgnoreCase)
+                    ? "Standard Search"
+                    : "Customized Search",
+                FinancialYear = r.FinancialYear,
+                RequestorUserId = r.RequestorUserId,
+                RequestorName = r.RequestorName,
+                IsAdminManaged = string.Equals(r.SearchType, "Standard Search", StringComparison.OrdinalIgnoreCase),
+                TransactionName = r.TransactionName,
+                Industry = r.Industry,
+                CompanyName = r.CompanyName,
+                Purpose = r.Purpose,
+                CompanyBusinessDescription = r.CompanyBusinessDescription,
+                ExclusionKeywords = r.ExclusionKeywords,
+                AiPrompt = r.AiPrompt,
+                BenchmarkingRequestId = r.Id,
+                CreatedAtUtc = r.CreatedAtUtc,
+                UpdatedAtUtc = r.UpdatedAtUtc
+            })
+            .ToList();
+    }
+
+    private static List<PromptRecord> BuildDefaultPromptTemplates()
+    {
+        return new List<PromptRecord>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Default (v1)",
+                Description = "Structured prompt built from business description + exclusions.",
+                PromptText = "Auto-generated",
+                IsDefault = true,
+                IsManagedTemplate = true,
+                CreatedAtUtc = DateTime.UtcNow
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "TP Focused",
+                Description = "Emphasize tested party profile and key differentiators.",
+                PromptText = "Focus on tested party description. Highlight products/services, key functions, risks, and business model. Apply exclusions strictly.",
+                IsDefault = false,
+                IsManagedTemplate = true,
+                CreatedAtUtc = DateTime.UtcNow
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Strict exclusions",
+                Description = "Explicitly call out exclusion handling.",
+                PromptText = "Use tested party description as primary context. Treat exclusions as hard filters. Do not include excluded words in any reasoning output.",
+                IsDefault = false,
+                IsManagedTemplate = true,
+                CreatedAtUtc = DateTime.UtcNow
+            }
+        };
     }
 
     private void SaveToFile()
     {
         var dir = Path.GetDirectoryName(_filePath);
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-        var model = new DummyDataFileModel { Users = _users, Requests = _requests, Feedbacks = _feedbacks };
+        var model = new DummyDataFileModel { Users = _users, Requests = _requests, Searches = _searches, Prompts = _prompts, Feedbacks = _feedbacks };
         var json = JsonSerializer.Serialize(model, JsonOptions);
         File.WriteAllText(_filePath, json);
     }

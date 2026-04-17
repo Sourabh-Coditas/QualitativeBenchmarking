@@ -2,14 +2,16 @@ namespace KPMG.QualitativeBenchmarking.Application.Abstraction;
 
 public interface IFileStorageService
 {
+    /// <summary>Returns a storage reference: local path (filesystem backend) or HTTPS URL (blob backend).</summary>
     Task<string> StoreAsync(Stream content, string fileName, string? subPath = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Stores a file under the benchmarking uploads root (e.g. User's Downloads\Uploads) in the given request folder.
-    /// Used for Current Year, Previous Year, and Column Mapping Excel files. Same requestFolderName groups files for one request.
+    /// Stores benchmarking Excel inputs; same <paramref name="requestFolderName"/> groups files for one request.
+    /// Returns a storage reference (path or blob URL) from the configured storage provider.
     /// </summary>
     Task<string> StoreBenchmarkingFileAsync(Stream content, string fileName, string requestFolderName, CancellationToken cancellationToken = default);
 
+    /// <summary>Opens a stream for a previously stored reference (local path or HTTPS blob URL).</summary>
     Task<Stream?> GetAsync(string path, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string path, CancellationToken cancellationToken = default);
 }

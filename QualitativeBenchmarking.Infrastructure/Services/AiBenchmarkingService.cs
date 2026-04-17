@@ -66,6 +66,22 @@ public class AiBenchmarkingService : IAiBenchmarkingService
         return dto ?? throw new InvalidOperationException("AI service returned empty analyze-all response.");
     }
 
+    public async Task<AiGeneratePromptResponseDto> GeneratePromptAsync(
+        AiGeneratePromptRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (string.IsNullOrWhiteSpace(request.BusinessDescription))
+            throw new ArgumentException("BusinessDescription is required.", nameof(request));
+        if (string.IsNullOrWhiteSpace(request.ExclusionKeywords))
+            throw new ArgumentException("ExclusionKeywords is required.", nameof(request));
+
+        using var response = await _http.PostAsJsonAsync("/generate-prompt", request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var dto = await response.Content.ReadFromJsonAsync<AiGeneratePromptResponseDto>(cancellationToken: cancellationToken);
+        return dto ?? throw new InvalidOperationException("AI service returned empty generate-prompt response.");
+    }
+
     public async Task<(Stream Content, string FileName)> DownloadAsync(
         AiDownloadRequestDto request,
         CancellationToken cancellationToken = default)

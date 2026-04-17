@@ -12,6 +12,22 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.WebHost.ConfigureKestrel(o =>
+        {
+            o.Limits.MaxRequestBodySize = null;
+            o.Limits.MinRequestBodyDataRate = null;
+        });
+        builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
+        {
+            o.MultipartBodyLengthLimit = long.MaxValue;
+            o.ValueLengthLimit = int.MaxValue;
+            o.MultipartHeadersLengthLimit = int.MaxValue;
+        });
+        builder.Services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(o =>
+        {
+            o.Limits.MaxRequestBodySize = null;
+        });
+
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IUserContext, HttpUserContext>();
 

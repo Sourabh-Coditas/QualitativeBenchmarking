@@ -69,6 +69,33 @@ public class SavedSearchesTests : IClassFixture<ApiFixture>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Create_Customized_Search_Returns_201()
+    {
+        var body = new
+        {
+            name = "My Custom Search",
+            searchType = "Customized Search",
+            financialYear = "FY 2024-25",
+            transactionName = "IT Services"
+        };
+        var response = await _client.PostAsJsonAsync("/api/saved-searches", body);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_Standard_Search_As_Non_Admin_Returns_403()
+    {
+        var body = new
+        {
+            name = "Std Search",
+            searchType = "Standard Search",
+            financialYear = "FY 2024-25"
+        };
+        var response = await _client.PostAsJsonAsync("/api/saved-searches", body);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private sealed class SavedSearchItem
     {
         public Guid Id { get; set; }

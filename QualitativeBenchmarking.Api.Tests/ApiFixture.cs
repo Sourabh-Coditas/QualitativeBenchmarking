@@ -69,6 +69,12 @@ public class ApiFixture : WebApplicationFactory<Program>
             });
         }
 
+        public Task<AiGeneratePromptResponseDto> GeneratePromptAsync(AiGeneratePromptRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var text = $"AI Prompt: {request.BusinessDescription.Trim()} | Exclusions: {request.ExclusionKeywords.Trim()}";
+            return Task.FromResult(new AiGeneratePromptResponseDto { Prompt = text });
+        }
+
         public Task<(Stream Content, string FileName)> DownloadAsync(
             AiDownloadRequestDto request,
             CancellationToken cancellationToken = default)

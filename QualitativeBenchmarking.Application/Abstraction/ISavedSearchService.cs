@@ -4,6 +4,7 @@ namespace KPMG.QualitativeBenchmarking.Application.Abstraction;
 
 public interface ISavedSearchService
 {
+    Task<SavedSearchDetailDto?> GetByIdAsync(Guid id, Guid? currentUserId, bool isAdmin, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<SavedSearchItemDto>> GetStandardSearchesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<SavedSearchItemDto>> GetCustomizedSearchesAsync(Guid? requestorUserId, CancellationToken cancellationToken = default);
 
@@ -12,6 +13,10 @@ public interface ISavedSearchService
 
     /// <summary>Customized saved searches grouped by period, periods ordered ascending.</summary>
     Task<IReadOnlyList<SavedSearchPeriodGroupDto>> GetCustomizedSearchesGroupedByPeriodAsync(Guid? requestorUserId, CancellationToken cancellationToken = default);
+
+    Task<SavedSearchDetailDto> CreateAsync(CreateSavedSearchDto dto, Guid? currentUserId, string currentUsername, bool isAdmin, CancellationToken cancellationToken = default);
+    Task<SavedSearchDetailDto?> UpdateAsync(Guid id, UpdateSavedSearchDto dto, Guid? currentUserId, bool isAdmin, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(Guid id, Guid? currentUserId, bool isAdmin, CancellationToken cancellationToken = default);
 
     Task<(Stream? Content, string? FileName)> DownloadSearchAsync(Guid id, Guid? requestorUserId, bool isAdmin, CancellationToken cancellationToken = default);
 }
